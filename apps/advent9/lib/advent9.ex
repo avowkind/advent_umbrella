@@ -21,7 +21,6 @@ defmodule Advent9 do
   def parse_line(line) do
     line
     |> String.trim()
-    |> String.split(" ", trim: true)
     |> Enum.map(&String.to_integer/1)
   end
 
