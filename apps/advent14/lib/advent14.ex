@@ -5,18 +5,6 @@ defmodule Advent14 do
   """
 
   @doc """
-  transpose an array of arrays - found on stack overflow
-  Example:
-
-          iex> Advent14.transpose([[1,2],[3,4],[5,6]])
-          [[1, 3, 5], [2, 4, 6]]
-  """
-  def transpose([[] | _]), do: []
-  def transpose(m) do
-    [Enum.map(m, &hd/1) | transpose(Enum.map(m, &tl/1))]
-  end
-
-  @doc """
   Parsing
   read each line into a number array.
   . 0
@@ -107,6 +95,11 @@ defmodule Advent14 do
   i.e move the 1 to the left if it is not at the head or a 2
   2s and 0 do not move
 
+  This version does not actually move the rocks.
+  We split the array into sub arrays marked by 2s,
+  The count  how many 1s there are in each sub array
+  and then calculate the score for each sub array
+
   i.e swap (0,1) => (1, 0)
   Example:
 
@@ -123,32 +116,55 @@ defmodule Advent14 do
     |> Enum.sum()
   end
 
-    @doc """
+  @doc """
+  This version required for part2 does move the rocks as we need
+  their new positions.
   Slide each rock to the left until it hits the head or a #
   i.e move the 1 to the left if it is not at the head or a 2
   2s and 0 do not move
 
-  i.e swap (0,1) => (1, 0)
+  Updated version - do all in one pass - here we accumulate any zeros in a counter
+  and pass through any ones, and when we hit a 2 we add the zeros to the list
+  and reset the counters, check what happens if there are zeros left at the end
   Example:
 
           iex> Advent14.slide_left2([0, 1, 0, 2, 0, 0, 0, 0, 0, 1])
           [1, 0, 0, 2, 1, 0, 0, 0, 0, 0]
+
+          iex> Advent14.slide_left2([0, 1, 0, 2, 1, 1, 2, 0, 0, 1])
+          [1, 0, 0, 2, 1, 1, 2, 1, 0, 0]
+
+          iex> Advent14.slide_left2([0, 1, 0, 0, 1, 1, 0, 0, 1, 0])
+          [1, 1, 1, 1, 0, 0, 0, 0, 0, 0]
   """
   def slide_left2(list) do
-    list
-    |> split_at_rock2()
-    |> Enum.map(&slide_ones_to_left/1)
-    |> Enum.intersperse([2])
-    |> List.flatten()
+    Enum.reduce(list, {[], 0, 0}, fn
+      1, {acc, ones, zeros} -> {acc, ones + 1, zeros} # accum 1s
+      0, {acc, ones, zeros} -> {acc, ones, zeros + 1} # accum 2s
+      2, {acc, ones, zeros} -> {acc ++  List.duplicate(1, ones) ++ List.duplicate(0, zeros) ++ [2], 0, 0}
+    end)
+    # add any left over 1s and 0s and return acc
+    |> then(fn {acc, ones, zeros} -> acc ++ List.duplicate(1, ones) ++ List.duplicate(0, zeros) end)
   end
 
-  defp slide_ones_to_left(list) do
-    count_ones = Enum.count(list, &(&1 == 1))
-    count_zeros = Enum.count(list, &(&1 == 0))
-    ones = List.duplicate(1, count_ones)
-    zeros = List.duplicate(0, count_zeros)
-    ones ++ zeros
-  end
+  # original version - split into sub groups and count 1s
+  # def slide_left2(list) do
+  #   list
+  #   |> split_at_rock2()
+  #   |> Enum.map(&slide_ones_to_left/1)
+  #   |> Enum.intersperse([2])
+  #   |> List.flatten()
+  # end
+
+  # defp slide_ones_to_left(list) do
+  #   count_ones = Enum.count(list, &(&1 == 1))
+  #   count_zeros = Enum.count(list, &(&1 == 0))
+  #   ones = List.duplicate(1, count_ones)
+  #   zeros = List.duplicate(0, count_zeros)
+  #   ones ++ zeros
+  # end
+
+
   @doc """
   Parsing
   read each line into a number array.
@@ -165,13 +181,9 @@ defmodule Advent14 do
     file_path
     |> File.stream!()
     |> Enum.map(&parse_line/1)
-    |> transpose()
-    |> IO.inspect()
-
+    |> Enum.zip()
     |> Enum.map(&slide_left/1)
-    |> IO.inspect()
     |> Enum.sum()
-    |> IO.inspect()
 
   end
 
@@ -222,26 +234,21 @@ defmodule Advent14 do
     {res, hashes ++ [hash(res)]}
   end
 
+  @doc """
+  perform count cycles of the grid, each returns the grid to the North
+  facing position.
+  grid is a tuple of the grid and the hash accumulator
+  """
   def spins(grid, count) do
-    IO.puts("spins #{count}")
-    spin = 1..count
-    |> Enum.reduce({grid, []}, fn _, acc ->
-      res = acc |> cycle()
-      {g1, hash} = res
-      score = g1 |> Enum.map(&score2/1)
-        |> IO.inspect()
-        |> Enum.sum()
-        IO.puts("score #{score}")
-        IO.inspect(hash)
-      res
-    end)
-    { g1, _ } = spin
-
-    spin
+    1..count |> Enum.reduce({grid, []}, fn _, acc -> acc |> cycle() end)
   end
 
   @doc """
   hash the grid
+  we want to compress the grid into a single number that we can use
+  to compare with other grids and thus detect cycles.
+  We use the FNV-1a hash algorithm to get a single value.
+  it does not need to be secure and is fast.
 
   Example:
           iex> Advent14.hash([[1,2],[3,4],[5,6]])
@@ -261,6 +268,7 @@ defmodule Advent14 do
     (hash * @prime) |> rem(2**32) |> Bitwise.bxor(byte)
   end
 
+  # this built in could work just as well but the output is a long string
   # #   def hash_sha(grid) do
   #   str = grid
   #   |> List.flatten()
@@ -268,6 +276,14 @@ defmodule Advent14 do
   #   :crypto.hash(:sha256, str)
   # end
 
+  @doc """
+  find the cycle in the stream of hashes
+  we just need to find the first repeat occurance of the hash,
+  The cycle length is the different in positions between the first and second
+  occurance. The start position is the position of the first occurance.
+  works so long as the hash function does not generate duplicates for different maps.
+  """
+  @spec find_cycle(Stream.t()) :: {integer, integer}
   def find_cycle(stream) do
     Enum.reduce_while(stream, {0, %{}}, fn number, {position, map} ->
       if Map.has_key?(map, number) do
@@ -278,52 +294,72 @@ defmodule Advent14 do
     end)
   end
 
-  def score2(list) do
+  @doc """
+  We score the board by multiplying the value of each cell
+  by its diminishing distance from the start. with the first multiplier
+  being the length of the list.
+  Example:
+
+          iex> Advent14.score([0, 1, 0, 2, 0, 1, 2, 0, 0, 0])
+          14
+          iex> Advent14.score([0, 1, 0, 2, 0, 1, 2, 0, 0, 1])
+          15
+  """
+  def score(list) do
     list
     |> Enum.with_index(fn x, i -> { x, length(list) -i} end)
-    # |> IO.inspect(label: "score2")
     |> Enum.map(fn {x, val} ->  val * if x == 1, do: 1, else: 0 end)
     |> Enum.sum()
   end
 
   @doc """
-  for part 2 we need to shake the board around for
-  1000000000 times and then do the scoring.
+  For part 2 we need to shake the board around for
+  1_000_000_000 times and then do the scoring.
   so we need to actually move the stuff over and over again
+  and then score it.
 
+  This would take too long so we assume that after n rotations we will
+  return to one of our previous positions and then we can work out
+  the cycle length.
+  We then work out how many cycles fit into 1_000_000_000 - first repeat
+  and then do the remainder.
+
+  1_000_000_000 would take 1000 * 25.3 secs = 25300 secs = 7 hours
+
+  @initial_tries is the number of rotations we attempt before searching
+  for the first cycle this is a trade off between spinning for a while
+  or having to check the list after every spin.
   Example:
-          iex> Advent14.run2("data/data.txt")
 
+          iex> Advent14.run2("data/test.txt")
+          64
+
+          iex> Advent14.run2("data/data.txt")
+          104533
   """
+  @length 1_000_000_000
+  @initial_tries 100
   def run2(file_path) do
     grid = file_path
     |> File.stream!()
     |> Enum.map(&parse_line/1)
     |> rotate90_left()
 
-    { _grid, hashes} = grid |> spins(100)
-    { start, count } = find_cycle(hashes)
-    IO.puts "start #{start} count #{count}"
-    length = 1_000_000_000
-    { g1, _} = grid |> spins(start)
-    IO.inspect(g1, label: "g1")
+    { start, count } = grid
+      |> spins(@initial_tries)
+      |> then(fn {_, hashes} -> find_cycle(hashes) end)
 
-    # here we work out how many cycles fit in the length
-    # and then we do the remainder
-    { g2, _} = g1 |> spins(count)
-    IO.inspect(g2, label: "g2")
-    left = rem(length - start, count)
-    IO.puts("left #{left}")
-    { g3, _} = g2 |> spins(left)
-
-    g3 |> IO.inspect(label: "g3")
-    |> Enum.map(&score2/1)
-    |> IO.inspect()
+    left = rem(@length - start, count)
+    IO.puts "start #{start} count #{count}, left #{left}"
+    grid
+    |> spins(start) |> then(fn {g, _} -> g end)
+    |> spins(count) |> then(fn {g, _} -> g end)
+    |> spins(left)  |> then(fn {g, _} -> g end)
+    |> Enum.map(&score/1)
     |> Enum.sum()
     |> IO.inspect()
 
   end
-  # 1_000_000_000
-  # would take 1000 * 25.3 secs = 25300 secs = 7 hours
+
 
 end
