@@ -32,21 +32,42 @@ defmodule Advent16Test do
   #   assert Advent16.apply_rule({:down, 91}, '.', 10) == [{:out, 101}]
   # end
 
-  # test "ray_trace" do
-  #   IO.puts("test ray_trace")
-  #   map = "data/test.txt" |> Advent16.parse_file()
-  #   Advent16.ray_trace([], 0, {:right, 0}, 10,  map)
+  # test "ray_trace cycle " do
+  #   IO.puts("test ray_trace mini")
+  #   map = "data/cycle.txt" |> Advent16.parse_file()
+  #   Advent16.ray_trace([], {:right, 0}, 4,  map)
   #   |> IO.inspect(label: "map")
   #   |> Advent16.count_pos()
   #   |> IO.inspect(label: "count")
   # end
 
-  test "ray_trace data" do
-    IO.puts("test ray_trace")
-    map = "data/data.txt" |> Advent16.parse_file()
-    Advent16.ray_trace([], 0, {:right, 0}, 110,  map)
-    |> IO.inspect(label: "map")
-    |> Advent16.count_pos()
+  # test "ray_trace" do
+  #   IO.puts("test ray_trace")
+  #   map = "data/test.txt" |> Advent16.parse_file()
+  #   Advent16.ray_trace([], {:right, 0}, map)
+  #   |> IO.inspect(label: "map")
+  #   |> Advent16.count_pos()
+  #   |> IO.inspect(label: "count")
+  # end
+
+  # @tag timeout: 360000
+  # test "part 1" do
+  #   IO.puts("test ray_trace")
+  #   map = "data/data.txt" |> Advent16.parse_file()
+  #   Advent16.ray_trace([], {:right, 0}, map)
+  #   |> Advent16.count_pos()
+  #   |> IO.inspect(label: "count")
+  # end
+
+  # @tag timeout: 360000
+  # test "part 2" do
+  #   Advent16.run2("data/data.txt")
+  #   |> IO.inspect(label: "count")
+  # end
+
+  @tag timeout: 360000
+  test "part 3" do
+    Advent16.run3("data/data.txt")
     |> IO.inspect(label: "count")
   end
 end

@@ -39,69 +39,82 @@ defmodule Advent16 do
   if the new position leaves the map then we return [{:out, pos}]
   Example:
 
-          iex> Advent16.apply_rule({:up, 15}, "|", 10)
-          [{:up, 5}]
-          iex> Advent16.apply_rule({:left, 15}, "|", 10)
-          [{:up, 5}, {:down, 25}]
 
   """
-  def apply_rule(move, ch, row) do
+  # @rules %{
+  #   "." => fn ({dir, pos}) ->
+  #     case dir do
+  #       :up -> [{:up, pos - @row}]
+  #       :right -> [{:right, pos + 1}]
+  #       :down -> [{:down, pos + @row}]
+  #       :left -> [{:left, pos - 1}]
+  #     end
+  #   end,
+  #   "|" => fn ({dir, pos}) ->
+  #     case dir do
+  #       :up -> [{:up, pos - @row}]
+  #       :left -> [{:up, pos - @row}, { :down, pos + @row}]
+  #       :down -> [{:down, pos + @row}]
+  #       :right -> [{:up, pos - @row}, { :down, pos + @row}]
+  #     end
+  #   end,
+
+  #   "-" => fn ({dir, pos}) ->
+  #     case dir do
+  #       :up -> [{:left, pos - 1}, { :right, pos + 1}]
+  #       :left -> [{ :left, pos - 1}]
+  #       :down -> [{:left, pos - 1}, { :right, pos + 1}]
+  #       :right ->  [{ :right, pos + 1}]
+  #     end
+  #   end,
+
+  #   "/" => fn ({dir, pos}) ->
+  #     case dir do
+  #       :up -> [{:right, pos + 1}]
+  #       :left -> [{:down, pos + @row}]
+  #       :down -> [{:left, pos - 1}]
+  #       :right -> [{:up, pos - @row}]
+  #     end
+  #   end,
+
+  #   "\\" => fn ({dir, pos}) ->
+  #     case dir do
+  #       :up -> [{:left, pos - 1}]
+  #       :left -> [{:up, pos - @row}]
+  #       :down -> [{:right, pos + 1}]
+  #       :right -> [{:down, pos + @row}]
+  #     end
+  #   end
+  # }
+  @row 110
+
+  def rule({dir, pos}, ch) when dir == :up and ch in [".", "|"], do: [{:up, pos - @row}]
+  def rule({dir, pos}, ch) when dir == :down and ch in [".", "|"], do: [{:down, pos + @row}]
+  def rule({dir, pos}, ch) when dir == :left and ch in [".", "-"], do: [{:left, pos - 1}]
+  def rule({dir, pos}, ch) when dir == :right and ch in [".", "-"], do: [{:right, pos + 1}]
+  def rule({dir, pos}, ch) when dir in [:left, :right] and ch == "|", do: [{:up, pos - @row}, { :down, pos + @row}]
+  def rule({dir, pos}, ch) when dir in [:up, :down] and ch == "-", do: [{:left, pos - 1}, { :right, pos + 1}]
+  def rule({dir, pos}, ch) when dir == :up and ch == "/", do: [{:right, pos + 1}]
+  def rule({dir, pos}, ch) when dir == :down and ch == "\\", do: [{:right, pos + 1}]
+  def rule({dir, pos}, ch) when dir == :left and ch == "/", do: [{:down, pos + @row}]
+  def rule({dir, pos}, ch) when dir == :right and ch == "\\", do: [{:down, pos + @row}]
+  def rule({dir, pos}, ch) when dir == :down and ch == "/", do: [{:left, pos - 1}]
+  def rule({dir, pos}, ch) when dir == :up and ch == "\\", do: [{:left, pos - 1}]
+  def rule({dir, pos}, ch) when dir == :left and ch == "\\", do: [{:up, pos - @row}]
+  def rule({dir, pos}, ch) when dir == :right and ch == "/", do: [{:up, pos - @row}]
+
+
+  def apply_rule(move, ch) do
     # IO.puts("apply_rule #{ch}")
-    rules = %{
-      "." => fn ({dir, pos}) ->
-        case dir do
-          :up -> [{:up, pos - row}]
-          :right -> [{:right, pos + 1}]
-          :down -> [{:down, pos + row}]
-          :left -> [{:left, pos - 1}]
-        end
-      end,
-      "|" => fn ({dir, pos}) ->
-        case dir do
-          :up -> [{:up, pos - row}]
-          :left -> [{:up, pos - row}, { :down, pos + row}]
-          :down -> [{:down, pos + row}]
-          :right -> [{:up, pos - row}, { :down, pos + row}]
-        end
-      end,
-
-      "-" => fn ({dir, pos}) ->
-        case dir do
-          :up -> [{:left, pos - 1}, { :right, pos + 1}]
-          :left -> [{ :left, pos - 1}]
-          :down -> [{:left, pos - 1}, { :right, pos + 1}]
-          :right ->  [{ :right, pos + 1}]
-        end
-      end,
-
-      "/" => fn ({dir, pos}) ->
-        case dir do
-          :up -> [{:right, pos + 1}]
-          :left -> [{:down, pos + row}]
-          :down -> [{:left, pos - 1}]
-          :right -> [{:up, pos - row}]
-        end
-      end,
-
-      "\\" => fn ({dir, pos}) ->
-        case dir do
-          :up -> [{:left, pos - 1}]
-          :left -> [{:up, pos - row}]
-          :down -> [{:right, pos + 1}]
-          :right -> [{:down, pos + row}]
-        end
-      end
-    }
     off_map = fn ({dir, pos}) ->
       case dir do
         :up -> if pos < 0, do: {:out, pos}, else: {dir, pos}
-        :right -> if rem(pos, row) == 0, do: {:out, pos}, else: {dir, pos}
-        :down -> if pos >= row * row, do: {:out, pos}, else: {dir, pos}
-        :left -> if rem(pos+row, row) == row - 1, do: {:out, pos}, else: {dir, pos}
+        :right -> if rem(pos, @row) == 0, do: {:out, pos}, else: {dir, pos}
+        :down -> if pos >= @row * @row, do: {:out, pos}, else: {dir, pos}
+        :left -> if rem(pos+@row, @row) == @row - 1, do: {:out, pos}, else: {dir, pos}
       end
     end
-
-    Map.get(rules, ch).(move) |> Enum.map(off_map)
+    rule(move, ch) |> Enum.map(off_map)
   end
 
   @doc """
@@ -114,32 +127,29 @@ defmodule Advent16 do
 
   Example:
 
-          iex> Advent16.ray_trace([], 0, {:right, 0}, 2,  %{ 0 => ".",1 => ".",2 => ".",3 => ".",})
   """
-  def ray_trace(acc, i, {dir, pos}, width, map) do
-    # IO.puts("ray_trace #{i} #{dir} #{pos}")
-    # if this position is already in the accumulator then we are done
-    if Enum.member?(acc, {dir, pos}) do
-      IO.puts("already in acc")
+  def ray_trace(acc, {:out, _} = _move, _map), do: acc
+
+  def ray_trace(acc, move, map) do
+    if move in acc do
       acc
     else
-    if i > 600 do
-      # IO.puts("too many iterations")
-      acc
-    else
-      case dir do
-        :out ->
-          acc
-        _ ->
-          new_acc = apply_rule({dir, pos}, Map.get(map, pos), width)
-            |> Enum.reverse()
-            |> Enum.flat_map(fn {dir, pos} -> ray_trace(acc, i + 1, {dir, pos}, width, map) end)
-          [{dir,pos} | new_acc]
-      end
+      acc = [move | acc]
+      {_, pos} = move
+      case apply_rule(move, Map.get(map, pos)) do
+        [move] -> ray_trace(acc, move, map)
+        [move1, move2] ->
+          if move1 in acc or move2 in acc do
+            acc
+          else
+            ray_trace(acc, move1, map)
+            |> ray_trace(move2, map)
+          end
+        end
     end
   end
-    # |> IO.inspect(label: "end ray_trace #{i}")
-  end
+
+
 
   @doc """
   count the number of unique pos values in the map
@@ -152,39 +162,47 @@ defmodule Advent16 do
   end
 
   @doc """
-  do the thing
-  Example:
+  do the thing part 1
 
   """
   def run1(file_path, _widht) do
     file_path
     |> parse_file()
-    |> IO.inspect(label: "map")
-  end
-  # iex> Advent16.run1("data/straightrun.txt", 10)
-
-
-  def print_grid(map, width) do
-    # Initialize the grid
-    grid = List.duplicate(List.duplicate(".", width), width)
-
-    # Update the grid based on the map
-    updated_grid = Enum.reduce(map, grid, fn {dir, val}, acc ->
-      row = div(val, width)
-      col = rem(val, width)
-
-      case dir do
-        :right -> List.replace_at(List.replace_at(acc, row, List.replace_at(Enum.at(acc, row), col, "#")), row, Enum.at(acc, row))
-        :down -> List.replace_at(List.replace_at(acc, row, List.replace_at(Enum.at(acc, row), col, "#")), row, Enum.at(acc, row))
-        :left -> List.replace_at(List.replace_at(acc, row, List.replace_at(Enum.at(acc, row), col, "#")), row, Enum.at(acc, row))
-        :up -> List.replace_at(List.replace_at(acc, row, List.replace_at(Enum.at(acc, row), col, "#")), row, Enum.at(acc, row))
-      end
-    end)
-
-    # Print the grid
-    Enum.each(updated_grid, fn row ->
-      IO.puts(Enum.join(row, ""))
-    end)
   end
 
+  @doc """
+  do the thing for part 2
+  iterate over all 4 sides and all positions on each side
+  """
+  def run2(file_path) do
+    map = parse_file(file_path)
+    [:left, :right, :up, :down]
+    |> Enum.flat_map(fn dir ->
+      IO.inspect(dir, label: "dir")
+      0..109
+      |> Enum.map(fn i ->
+        Advent16.ray_trace([], {dir, i}, map)
+        |> Advent16.count_pos()
+        |> IO.inspect(label: "count")
+      end)
+    end)
+
+    |> IO.inspect(label: "end")
+    |> Enum.max()
+    |> IO.inspect()
+  end
+
+  def run3(file_path) do
+    map = parse_file(file_path)
+    tasks = for dir <- [:left, :right, :up, :down], i <- 0..109 do
+      Task.async(fn ->
+        Advent16.ray_trace([], {dir, i}, map)
+        |> Advent16.count_pos()
+      end)
+    end
+
+    tasks
+    |> Enum.map(&Task.await(&1, 10000))
+    |> Enum.max()
+  end
 end
