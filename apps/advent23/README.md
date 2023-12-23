@@ -1,21 +1,36 @@
 # Advent23
 
-**TODO: Add description**
+    #.#####################
+    #.......#########...###
+    #######.#########.#.###
+    ###.....#.>.>.###.#.###
+    ###v#####.#v#.###.#.###
+    ###.>...#.#.#.....#...#
+    ###v###.#.#.#########.#
+    ###...#.#.#.......#...#
+    #####.#.#.#######.#.###
+    #.....#.#.#.......#...#
+    #.#####.#.#.#########v#
+    #.#...#...#...###...>.#
+    #.#.#v#######v###.###v#
+    #...#.>.#...>.>.#.###.#
+    #####v#.#.###v#.#.###.#
+    #.....#...#...#.#.#...#
+    #.#########.###.#.#.###
+    #...###...#...#...#.###
+    ###.###.#.###v#####v###
+    #...#...#.#.>.>.#.>.###
+    #.###.###.#.###.#.#v###
+    #.....###...###...#...#
+    #####################.#
 
-## Installation
+We have to read in a map and find the longest path
+. can be travelled in any direction
+> or V can only be travelled right or down
+never step on the same cell twice - avoid cycles
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `advent23` to your list of dependencies in `mix.exs`:
+only a few places does the path split directions.
 
-```elixir
-def deps do
-  [
-    {:advent23, "~> 0.1.0"}
-  ]
-end
-```
+final graph is 141x141
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/advent23>.
-
+build a graph then find paths through the graph
