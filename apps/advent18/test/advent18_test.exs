@@ -36,15 +36,30 @@ defmodule Advent18Test do
 
   end
 
-
+  @tag :skip
   test "run_test 2" do
     graph = Advent18a.parse_file2("data/data.txt")
-    { graph, acc } = Advent18a.reduce_rects(graph)
-    Advent18a.reduce_rects(graph, acc)
+    graph |> IO.inspect(label: "parse_data")
+    { g1, a1 } = Advent18a.reduce_rects(graph, 0)
     |> IO.inspect()
-    |> Advent18a.sum_rects()
+
+    { g2, a2 } = Advent18a.reduce_rects(g1,a1)
+    |> IO.inspect()
+    { g3,a3 } = Advent18a.reduce_rects(g2,a2)
+    |> IO.inspect()
+    # |> Advent18a.sum_rects()
   end
 
+  test "run_test 3" do
+    graph = Advent18a.parse_file2("data/data.txt")
+    graph |> Advent18a.build_graph()
+    |> Advent18a.picks()
+    |> IO.inspect(label: "shoelace_formula")
+  end
+
+
   # 31549263 * 32855156  = 1,036,555,957,550,028
-  # 946396987969229 too hight
+  # 946396987969229 too high
+  # 926272994914692  too high
+  # 148442055476352 - not right
 end

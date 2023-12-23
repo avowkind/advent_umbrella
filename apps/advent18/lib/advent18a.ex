@@ -94,6 +94,25 @@ defmodule Advent18a do
     |> Enum.map(fn line -> parse_line2(line) end)
   end
 
+
+  def build_graph(plan) do
+    plan
+    |> Enum.reduce( {{0,0}, [{0,0}]},
+      fn {dir, steps}, {{row,col}, acc} ->
+          next = case dir do
+            "R" -> {row, col+steps}
+            "L" -> {row, col-steps}
+            "U" -> {row-steps, col}
+            "D" -> {row+steps, col}
+          end
+          IO.inspect(next, label: "next")
+
+          { next, [ next | acc ]}
+      end)
+      |> then(fn {_, acc} -> Enum.reverse(acc) end)
+      |> IO.inspect()
+  end
+
   @doc """
   reducing rectangles
 
@@ -106,7 +125,7 @@ defmodule Advent18a do
 
   """
   def turn( step, {prev, racc,moves} ) do
-    IO.inspect({prev, step, racc}, label: "\nturn[")
+    # IO.inspect({prev, step, racc}, label: "\nturn[")
     {d1, a} = prev
     {d2, b} = step
     left_turn = fn() -> racc + (a * b) end
@@ -133,7 +152,7 @@ defmodule Advent18a do
       _ ->
         { step, racc,  [ prev | moves] }
     end
-    |> IO.inspect(label: "turn]")
+    # |> IO.inspect(label: "turn]")
   end
 
 
@@ -147,28 +166,67 @@ defmodule Advent18a do
   # |> Advent18a.reduce_rects()
   """
   def reduce_rects( graph, acc\\0) do
-    IO.inspect(graph, label: "reduce_rects [")
+    # IO.inspect(graph, label: "reduce_rects [")
     [ first | tail ] = graph
     tail |> Enum.reduce({first, acc, []}, &turn(&1, &2)) # prev, rects, moves
 
     |> then(fn { last, racc, moves} ->
       moves = Enum.reverse([last | moves])
-        IO.inspect({racc, moves}, label: "reduce_rects ]")
+        # IO.inspect({racc, moves}, label: "reduce_rects ]")
         {moves, racc}
     end)
-    |> IO.inspect(label: "Result")
-    # |> sum_rects()
   end
 
   # 1407374123584  -  454969182101 = 952408144115
   def sum_rects({rects, racc}) do
-    IO.inspect({rects, racc}, label: "sum_rects [")
+    # IO.inspect({rects, racc}, label: "sum_rects [")
     dim = Enum.reduce(rects, %{}, fn {key, value}, acc ->
       Map.update(acc, key, value, &(&1 + value))
     end)
-    IO.inspect(dim, label: "dim")
+    # IO.inspect(dim, label: "dim")
     area = (dim["R"]+1) * (dim["D"] + 1)
     covered = area - racc
     IO.puts("area: #{area}, covered: #{covered}")
   end
+
+  def run_reduce_rects(graph, acc, 0), do: {graph, acc}
+  def run_reduce_rects(graph, acc, n) do
+    {new_graph, new_acc} = reduce_rects(graph, acc)
+    run_reduce_rects(new_graph, new_acc, n - 1)
+  end
+
+  def shoelace_formula1(vertices) do
+    vertices
+    |> Enum.concat([List.first(vertices)])
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.reduce({0, 0}, fn [{x1, y1}, {x2, y2}], {sum1, sum2} ->
+      {sum1 + x1 * y2, sum2 + x2 * y1}
+    end)
+    |> then(fn {sum1, sum2} -> abs(sum1 - sum2) / 2 end)
+  end
+
+  def shoelace_formula(vertices) do
+    vertices
+    |> Enum.chunk_every(2, 1, vertices)
+    |> Enum.map(fn [{lx, ly}, {rx, ry}] -> lx * ry - rx * ly end)
+    |> Enum.sum()
+    |> then(fn x -> div(abs(x), 2) end)
+  end
+
+  def picks(vertices) do
+    area = shoelace_formula(vertices)
+    boundary_points = boundary_points(vertices)
+    area - div(boundary_points, 2) + 1 + boundary_points
+  end
+
+  def boundary_points(vertices) do
+    vertices
+    |> Enum.chunk_every(2, 1, vertices)
+    |> Enum.map(fn
+      [{lx, y}, {rx, y}] -> abs(lx - rx)
+      [{x, ly}, {x, ry}] -> abs(ly - ry)
+    end)
+    |> Enum.sum()
+  end
+
 end
